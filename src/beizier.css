@@ -1,0 +1,33 @@
+.container {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.anchor {
+  fill: #ff8888;
+  z-index: 100;
+  r: 6;
+}
+
+.control {
+  fill: #88ff88;
+  r: 6;
+}
+
+.anchor:hover, .control:hover, .dragging {
+  r: 8;
+}
+
+.curve-dot {
+  z-index: 1;
+  r: 1;
+}
+.curve-line {
+  z-index: 1;
+  stroke-width: 3;
+  stroke: white;
+}
+.handle-line {
+  stroke: #dddddd;
+  stroke-width: 1.5;
+}
