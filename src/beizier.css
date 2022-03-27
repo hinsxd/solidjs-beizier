@@ -14,8 +14,11 @@
   r: 6px;
 }
 
-.anchor:hover, .control:hover, .dragging {
+.anchor:hover, .control:hover {
   r: 8px;
+}
+.anchor.draft, .control.draft {
+  opacity: 0.4;
 }
 
 .curve-dot {
@@ -27,6 +30,10 @@
   stroke-width: 3;
   stroke: white;
   pointer-events: none;
+  fill: transparent;
+}
+.curve-line.draft {
+  opacity: 0.4
 }
 .handle-line {
   stroke: #dddddd;

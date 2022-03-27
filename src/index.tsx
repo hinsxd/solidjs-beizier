@@ -1,7 +1,16 @@
 /* @refresh reload */
-import { render } from 'solid-js/web';
+import { DragDropProvider, DragDropSensors } from "@thisbeyond/solid-dnd";
+import { render } from "solid-js/web";
+import App from "./App";
+import "./beizier.css";
+import "./index.css";
 
-import './index.css';
-import App from './App';
-
-render(() => <App />, document.getElementById('root') as HTMLElement);
+render(
+  () => (
+    <DragDropProvider>
+      <DragDropSensors />
+      <App />
+    </DragDropProvider>
+  ),
+  document.getElementById("root") as HTMLElement
+);
