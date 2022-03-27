@@ -3,9 +3,21 @@ import { Component, createSignal, Index, onMount, Show } from "solid-js";
 import { produce } from "solid-js/store";
 import { AnchorCircle } from "./components/AnchorCircle";
 import { ControlCircle } from "./components/ControlCIrcle";
+import { LockClosedIcon } from "./components/LockClosedIcon";
+import { LockOpenedIcon } from "./components/LockOpenedIcon";
+import { commitAnchor } from "./helpers/commitAnchor";
 import { getOpposite } from "./helpers/getOpposite";
 import { anchorStore, setAnchorStore } from "./store/anchorStore";
-import { Anchor, DraggableData } from "./types";
+import { DraggableData, Position } from "./types";
+
+const applyTransform = (position: Position, delta: Position) => {
+  return {
+    ...position,
+    isDraft: true,
+    draftX: position.x + delta.x,
+    draftY: position.y + delta.y,
+  };
+};
 
 const App: Component = () => {
   const [, { onDragMove, onDragEnd }] = useDragDropContext()!;
@@ -14,29 +26,45 @@ const App: Component = () => {
 
   onDragMove((e) => {
     const { index, dragging } = e.draggable.data as DraggableData;
-
-    const { x, y } = e.draggable.transform;
     setAnchorStore(
       "anchors",
       index,
-      dragging,
-      (draggingEl) =>
-        draggingEl && {
-          ...draggingEl,
-          isDraft: true,
-          draftX: draggingEl.x + x,
-          draftY: draggingEl.y + y,
+      produce((anchor) => {
+        const draggingEl = anchor[dragging];
+        if (!draggingEl) return;
+
+        anchor[dragging] = applyTransform(draggingEl, e.draggable.transform);
+        if (!lockControl()) return;
+
+        if (dragging === "position") {
+          if (anchor.leftControl) {
+            anchor.leftControl = applyTransform(
+              anchor.leftControl,
+              e.draggable.transform
+            );
+          }
+          if (anchor.rightControl) {
+            anchor.rightControl = applyTransform(
+              anchor.rightControl,
+              e.draggable.transform
+            );
+          }
+        } else {
+          const opposite =
+            dragging === "leftControl" ? "rightControl" : "leftControl";
+          if (anchor[opposite]) {
+            anchor[opposite] = applyTransform(
+              anchor[opposite]!,
+              getOpposite(e.draggable.transform)
+            );
+          }
         }
+      })
     );
   });
   onDragEnd((e) => {
-    const { index, dragging } = e.draggable.data as DraggableData;
-
-    setAnchorStore("anchors", index, dragging, (draggingEl) =>
-      draggingEl?.isDraft
-        ? { x: draggingEl.draftX, y: draggingEl.draftY }
-        : draggingEl
-    );
+    const { index } = e.draggable.data as DraggableData;
+    setAnchorStore("anchors", index, commitAnchor);
   });
 
   onMount(() => {
@@ -76,7 +104,14 @@ const App: Component = () => {
           }
         }}
       >
-        <rect stroke="white" stroke-width={2} x={0} fill="none" width="100%" height="100%" />
+        <rect
+          stroke="white"
+          stroke-width={2}
+          x={0}
+          fill="none"
+          width="100%"
+          height="100%"
+        />
         <Index each={anchorStore.draftPaths}>
           {(path) => <path d={path()} class="curve-line draft" />}
         </Index>
@@ -104,6 +139,28 @@ const App: Component = () => {
           }}
         </Index>
       </svg>
+
+      <button
+        classList={{
+          "lock-button": true,
+          opened: !lockControl(),
+          closed: lockControl(),
+        }}
+        onClick={() => setLockControl((locked) => !locked)}
+      >
+        <Show
+          when={lockControl()}
+          fallback={
+            <>
+              <LockOpenedIcon />
+              <span>Lock Opened</span>
+            </>
+          }
+        >
+          <LockClosedIcon />
+          <span>Locked</span>
+        </Show>
+      </button>
     </div>
   );
 };

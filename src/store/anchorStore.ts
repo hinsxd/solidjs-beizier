@@ -1,5 +1,5 @@
 import { createMutable, createStore } from "solid-js/store";
-import { draftPosToPos } from "../helpers/draftPosToPos";
+import { getDraftablePos } from "../helpers/getDraftablePos";
 import { getCurvePoints } from "../helpers/getCurvePoints";
 import { Anchor } from "../types";
 
@@ -64,10 +64,10 @@ export const [anchorStore, setAnchorStore] = createStore<{
       if (!isDraft) continue;
 
       const dots = getCurvePoints(
-        draftPosToPos(current.position),
-        draftPosToPos(current.rightControl),
-        draftPosToPos(next.leftControl),
-        draftPosToPos(next.position),
+        getDraftablePos(current.position),
+        getDraftablePos(current.rightControl),
+        getDraftablePos(next.leftControl),
+        getDraftablePos(next.position),
         50
       );
 

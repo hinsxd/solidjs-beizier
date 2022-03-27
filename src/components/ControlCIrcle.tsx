@@ -1,14 +1,14 @@
 import { createDraggable } from "@thisbeyond/solid-dnd";
 import { Show } from "solid-js";
-import { draftPosToPos } from "../helpers/draftPosToPos";
+import { getDraftablePos } from "../helpers/getDraftablePos";
 import { anchorStore } from "../store/anchorStore";
 import { Anchor } from "../types";
 
 export const ControlCircle = ({
   idx,
   side,
-  // anchor,
-}: {
+}: // anchor,
+{
   idx: number;
   side: "leftControl" | "rightControl";
   anchor: () => Anchor;
@@ -40,20 +40,25 @@ export const ControlCircle = ({
       <Show when={hasDraft()}>
         <line
           class="handle-line draft"
-          x1={draftPosToPos(controlPosition()!).x}
-          x2={draftPosToPos(anchorPosition()).x}
-          y1={draftPosToPos(controlPosition()!).y}
-          y2={draftPosToPos(anchorPosition()).y}
+          x1={getDraftablePos(controlPosition()!).x}
+          x2={getDraftablePos(anchorPosition()).x}
+          y1={getDraftablePos(controlPosition()!).y}
+          y2={getDraftablePos(anchorPosition()).y}
         />
       </Show>
       <circle
-        class="control"
+        class="node control"
         cx={controlPosition()?.x}
         cy={controlPosition()?.y}
       />
       <circle
+        class="node control draft"
+        cx={getDraftablePos(controlPosition()!).x}
+        cy={getDraftablePos(controlPosition()!)?.y}
+      />
+      <circle
         use:draggable
-        class="control draft"
+        class="node control draft"
         cx={controlPosition()?.x}
         cy={controlPosition()?.y}
       />
