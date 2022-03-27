@@ -1,30 +1,21 @@
 import { createDraggable } from "@thisbeyond/solid-dnd";
-import { Anchor } from "../types";
+import { anchorStore } from "../store/anchorStore";
+import { DraggableData } from "../types";
 
-export const AnchorCircle = ({
-  idx,
-  anchor,
-}: {
-  idx: number;
-  anchor: () => Anchor;
-}) => {
+export const AnchorCircle = ({ idx }: { idx: number }) => {
   const draggable = createDraggable(`anchor-${idx}`, {
     index: idx,
     dragging: "position",
-    anchor,
-  });
+  } as DraggableData);
+  const anchor = anchorStore.anchors[idx];
   return (
     <>
-      <circle
-        class="anchor"
-        cx={anchor().position.x}
-        cy={anchor().position.y}
-      />
+      <circle class="anchor" cx={anchor.position.x} cy={anchor.position.y} />
       <circle
         use:draggable
         class="anchor draft"
-        cx={anchor().position.x}
-        cy={anchor().position.y}
+        cx={anchor.position.x}
+        cy={anchor.position.y}
       />
     </>
   );

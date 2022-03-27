@@ -1,9 +1,9 @@
-import { createMutable } from "solid-js/store";
+import { createMutable, createStore } from "solid-js/store";
 import { draftPosToPos } from "../helpers/draftPosToPos";
 import { getCurvePoints } from "../helpers/getCurvePoints";
 import { Anchor } from "../types";
 
-export const anchorList = createMutable<{
+export const [anchorStore, setAnchorStore] = createStore<{
   anchors: Anchor[];
   paths: string[];
   draftPaths: string[];

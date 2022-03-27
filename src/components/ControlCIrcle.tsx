@@ -1,22 +1,25 @@
 import { createDraggable } from "@thisbeyond/solid-dnd";
 import { Show } from "solid-js";
 import { draftPosToPos } from "../helpers/draftPosToPos";
+import { anchorStore } from "../store/anchorStore";
 import { Anchor } from "../types";
 
 export const ControlCircle = ({
   idx,
   side,
-  anchor,
+  // anchor,
 }: {
   idx: number;
   side: "leftControl" | "rightControl";
   anchor: () => Anchor;
 }) => {
+  const anchor = () => anchorStore.anchors[idx];
   const draggable = createDraggable(`${side}-${idx}`, {
     index: idx,
     dragging: side,
     anchor,
   });
+
   const controlPosition = () => anchor()[side];
   const anchorPosition = () => anchor().position;
 

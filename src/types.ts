@@ -7,3 +7,8 @@ export type Anchor = {
   leftControl: Position | null;
   rightControl: Position | null;
 };
+
+export type DraggableData = {
+  index: number;
+  dragging: keyof Anchor;
+};

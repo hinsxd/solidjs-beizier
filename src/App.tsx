@@ -1,38 +1,42 @@
 import { useDragDropContext } from "@thisbeyond/solid-dnd";
-import { Component, Index, onMount, Show } from "solid-js";
+import { Component, createSignal, Index, onMount, Show } from "solid-js";
+import { produce } from "solid-js/store";
 import { AnchorCircle } from "./components/AnchorCircle";
 import { ControlCircle } from "./components/ControlCIrcle";
-import { anchorList } from "./store/anchorList";
-import { Anchor, Position } from "./types";
+import { getOpposite } from "./helpers/getOpposite";
+import { anchorStore, setAnchorStore } from "./store/anchorStore";
+import { Anchor, DraggableData } from "./types";
 
 const App: Component = () => {
   const [, { onDragMove, onDragEnd }] = useDragDropContext()!;
 
+  const [lockControl, setLockControl] = createSignal(true);
+
   onDragMove((e) => {
-    const { index, dragging, anchor } = e.draggable.data;
+    const { index, dragging } = e.draggable.data as DraggableData;
 
     const { x, y } = e.draggable.transform;
-
-    const draftPos = {
-      draftX: anchor()[dragging].x + x,
-      draftY: anchor()[dragging].y + y,
-    };
-    anchorList.anchors[index as number][dragging as keyof Anchor] = {
-      ...anchorList.anchors[index as number][dragging as keyof Anchor],
-      isDraft: true,
-      ...draftPos,
-    } as Position;
+    setAnchorStore(
+      "anchors",
+      index,
+      dragging,
+      (draggingEl) =>
+        draggingEl && {
+          ...draggingEl,
+          isDraft: true,
+          draftX: draggingEl.x + x,
+          draftY: draggingEl.y + y,
+        }
+    );
   });
   onDragEnd((e) => {
-    const { index, dragging } = e.draggable.data;
-    const pos = anchorList.anchors[index as number][dragging as keyof Anchor];
-    if (pos?.isDraft) {
-      anchorList.anchors[index as number][dragging as keyof Anchor] = {
-        x: pos.draftX,
-        y: pos.draftY,
-        isDraft: false,
-      };
-    }
+    const { index, dragging } = e.draggable.data as DraggableData;
+
+    setAnchorStore("anchors", index, dragging, (draggingEl) =>
+      draggingEl?.isDraft
+        ? { x: draggingEl.draftX, y: draggingEl.draftY }
+        : draggingEl
+    );
   });
 
   onMount(() => {
@@ -49,33 +53,38 @@ const App: Component = () => {
         class="container"
         width={500}
         height={500}
-        onPointerDown={(e) => {
+        onClick={(e) => {
           if (e.currentTarget === e.target) {
-            const lastAnchor =
-              anchorList.anchors[anchorList.anchors.length - 1];
             const { x, y } = container.getBoundingClientRect();
             const newPos = { x: e.clientX - x + 1, y: e.clientY - y + 1 };
-            lastAnchor.rightControl = {
-              x: 2 * lastAnchor.position.x - lastAnchor.leftControl!.x,
-              y: 2 * lastAnchor.position.y - lastAnchor.leftControl!.y,
-            };
-            anchorList.anchors.push({
-              position: newPos,
-              leftControl: { x: newPos.x + 20, y: newPos.y - 20 },
-              rightControl: null,
-            });
+
+            setAnchorStore(
+              produce((state) => {
+                const lastAnchor = state.anchors[state.anchors.length - 1];
+                lastAnchor.rightControl = getOpposite(
+                  lastAnchor.leftControl!,
+                  lastAnchor.position
+                );
+
+                state.anchors.push({
+                  position: newPos,
+                  leftControl: { x: newPos.x + 20, y: newPos.y - 20 },
+                  rightControl: null,
+                });
+              })
+            );
           }
         }}
       >
-        <rect stroke="white" fill="none" width={500} height={500} />
-        <Index each={anchorList.draftPaths}>
+        <rect stroke="white" stroke-width={2} x={0} fill="none" width="100%" height="100%" />
+        <Index each={anchorStore.draftPaths}>
           {(path) => <path d={path()} class="curve-line draft" />}
         </Index>
-        <Index each={anchorList.paths}>
+        <Index each={anchorStore.paths}>
           {(path) => <path d={path()} class="curve-line" />}
         </Index>
 
-        <Index each={anchorList.anchors}>
+        <Index each={anchorStore.anchors}>
           {(anchor, idx) => {
             return (
               <>
@@ -89,7 +98,7 @@ const App: Component = () => {
                     anchor={anchor}
                   />
                 </Show>
-                <AnchorCircle idx={idx} anchor={anchor} />
+                <AnchorCircle idx={idx} />
               </>
             );
           }}
