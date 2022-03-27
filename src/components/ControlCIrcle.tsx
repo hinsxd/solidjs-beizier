@@ -7,8 +7,7 @@ import { Anchor } from "../types";
 export const ControlCircle = ({
   idx,
   side,
-}: // anchor,
-{
+}: {
   idx: number;
   side: "leftControl" | "rightControl";
   anchor: () => Anchor;

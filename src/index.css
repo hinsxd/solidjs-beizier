@@ -1,3 +1,7 @@
+/* ./src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
@@ -17,16 +21,7 @@ code {
 }
 
 .app {
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-
-.container {
-  width: 100%;
-  max-width: 100vw;
+  @apply w-screen overflow-hidden flex flex-col items-center;
 }
 
 .node {
@@ -55,42 +50,23 @@ code {
 
 .curve-line {
   z-index: 2;
-  stroke-width: 3;
-  stroke: white;
-  pointer-events: none;
-  fill: transparent;
+  @apply stroke-white pointer-events-none fill-transparent stroke-[3];
 }
 .handle-line {
   stroke: #a0a0a0;
-  stroke-width: 1.5;
   z-index: 1;
+  @apply stroke-[1.5];
+}
+.lock-button {
+  @apply inline-flex space-x-2 items-center mt-4 px-3 py-2 rounded-lg text-white;
+}
+.lock-button.open {
+  @apply bg-green-600;
+}
+.lock-button.locked {
+  @apply bg-red-500;
 }
 
 .draft {
-  opacity: 0.4;
-}
-
-.lock-button {
-  margin-top: 16px;
-  border: 0;
-  padding: 8px 16px;
-  border-radius: 8px;
-  color: white;
-  display: inline-flex;
-  align-items: center;
-}
-.lock-button.opened {
-  background-color: green;
-}
-.lock-button.closed {
-  background-color: red;
-}
-
-.lock-button > svg {
-  height: 24px;
-  width: 24px;
-}
-.lock-button > span {
-  font-size: 16px;
-  margin-left: .5rem
+  @apply opacity-40;
 }

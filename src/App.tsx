@@ -1,5 +1,12 @@
 import { useDragDropContext } from "@thisbeyond/solid-dnd";
-import { Component, createSignal, Index, onMount, Show } from "solid-js";
+import {
+  Component,
+  createEffect,
+  createSignal,
+  Index,
+  onMount,
+  Show,
+} from "solid-js";
 import { produce } from "solid-js/store";
 import { AnchorCircle } from "./components/AnchorCircle";
 import { ControlCircle } from "./components/ControlCIrcle";
@@ -22,6 +29,13 @@ const applyTransform = (position: Position, delta: Position) => {
 
 const App: Component = () => {
   const [, { onDragMove, onDragEnd }] = useDragDropContext()!;
+
+  if (localStorage.getItem("anchors")) {
+    setAnchorStore("anchors", JSON.parse(localStorage.getItem("anchors")!));
+  }
+  createEffect(() => {
+    localStorage.setItem("anchors", JSON.stringify(anchorStore.anchors));
+  });
 
   const [lockControl, setLockControl] = createSignal(true);
 
@@ -85,7 +99,7 @@ const App: Component = () => {
     <div class="app">
       <svg
         ref={(el) => (container = el)}
-        class="container"
+        class="w-full"
         width={500}
         height={500}
         onClick={(e) => {
@@ -148,11 +162,7 @@ const App: Component = () => {
       </svg>
 
       <button
-        classList={{
-          "lock-button": true,
-          opened: !lockControl(),
-          closed: lockControl(),
-        }}
+        class={`lock-button ${lockControl() ? "locked" : "open"}`}
         onClick={() => setLockControl((locked) => !locked)}
       >
         <Show
@@ -160,12 +170,12 @@ const App: Component = () => {
           fallback={
             <>
               <LockOpenedIcon />
-              <span>Lock Opened</span>
+              <span class="text-base">Lock Opened</span>
             </>
           }
         >
           <LockClosedIcon />
-          <span>Locked</span>
+          <span class="text-base">Locked</span>
         </Show>
       </button>
     </div>
