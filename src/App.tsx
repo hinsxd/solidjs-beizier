@@ -6,6 +6,7 @@ import { ControlCircle } from "./components/ControlCIrcle";
 import { LockClosedIcon } from "./components/LockClosedIcon";
 import { LockOpenedIcon } from "./components/LockOpenedIcon";
 import { commitAnchor } from "./helpers/commitAnchor";
+import { getDraftablePos } from "./helpers/getDraftablePos";
 import { getOpposite } from "./helpers/getOpposite";
 import { anchorStore, setAnchorStore } from "./store/anchorStore";
 import { DraggableData, Position } from "./types";
@@ -53,10 +54,16 @@ const App: Component = () => {
           const opposite =
             dragging === "leftControl" ? "rightControl" : "leftControl";
           if (anchor[opposite]) {
-            anchor[opposite] = applyTransform(
-              anchor[opposite]!,
-              getOpposite(e.draggable.transform)
+            const oppositePosition = getOpposite(
+              getDraftablePos(anchor[dragging]!),
+              anchor.position
             );
+            anchor[opposite] = {
+              ...anchor[opposite]!,
+              isDraft: true,
+              draftX: oppositePosition.x,
+              draftY: oppositePosition.y,
+            };
           }
         }
       })
