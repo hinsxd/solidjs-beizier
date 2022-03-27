@@ -6,21 +6,21 @@
 .anchor {
   fill: #ff8888;
   z-index: 100;
-  r: 6;
+  r: 6px;
 }
 
 .control {
   fill: #88ff88;
-  r: 6;
+  r: 6px;
 }
 
 .anchor:hover, .control:hover, .dragging {
-  r: 8;
+  r: 8px;
 }
 
 .curve-dot {
   z-index: 1;
-  r: 1;
+  r: 1px;
 }
 .curve-line {
   z-index: 2;
