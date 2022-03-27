@@ -111,10 +111,12 @@ const App: Component = () => {
             setAnchorStore(
               produce((state) => {
                 const lastAnchor = state.anchors[state.anchors.length - 1];
-                lastAnchor.rightControl = getOpposite(
-                  lastAnchor.leftControl!,
-                  lastAnchor.position
-                );
+                if (lastAnchor) {
+                  lastAnchor.rightControl = getOpposite(
+                    lastAnchor.leftControl!,
+                    lastAnchor.position
+                  );
+                }
 
                 state.anchors.push({
                   position: newPos,
@@ -180,12 +182,15 @@ const App: Component = () => {
             <span class="text-sm">Locked</span>
           </Show>
         </button>
-
-        <select id="location" name="location" class="dropdown">
-          <option>United States</option>
-          <option selected>Canada</option>
-          <option>Mexico</option>
-        </select>
+        <button
+          class="reset-button"
+          onClick={() => {
+            if (confirm("Confirm reset drawing?"))
+              setAnchorStore("anchors", []);
+          }}
+        >
+          Reset
+        </button>
       </div>
     </div>
   );
