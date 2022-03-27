@@ -23,11 +23,13 @@
   r: 1;
 }
 .curve-line {
-  z-index: 1;
+  z-index: 2;
   stroke-width: 3;
   stroke: white;
+  pointer-events: none;
 }
 .handle-line {
   stroke: #dddddd;
   stroke-width: 1.5;
+  z-index: 1;
 }

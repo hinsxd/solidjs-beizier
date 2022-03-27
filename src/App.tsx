@@ -5,8 +5,10 @@ import {
   createMemo,
   createSignal,
   For,
+  Index,
   Show,
 } from "solid-js";
+import { createStore, produce } from "solid-js/store";
 import "./beizier.css";
 
 const lerp = (i: number, j: number, delta: number) => i + (j - i) * delta;
@@ -41,38 +43,65 @@ const getCurvePoints = (
 };
 
 type Position = { x: number; y: number };
-const [mousePos, setMousePos] = createSignal<Position>({
-  x: 0,
-  y: 0,
-});
-const [showDots, setShowDots] = createSignal(true);
-const [anchor1, setAnchor1] = createSignal<Position>({ x: 10, y: 10 });
-const [control1, setControl1] = createSignal<Position>({ x: 400, y: 10 });
-const [control2, setControl2] = createSignal<Position>({ x: 100, y: 490 });
-const [anchor2, setAnchor2] = createSignal<Position>({ x: 490, y: 490 });
 
-const [draggingState, setDraggingState] = createSignal<{
-  isDragging: boolean;
-  draggingEl: string | null;
-}>({
+type Anchor = {
+  position: Position;
+  leftControl: Position | null;
+  rightControl: Position | null;
+};
+
+type DraggingState =
+  | {
+      isDragging: false;
+    }
+  | {
+      isDragging: true;
+      draggingIndex: number;
+      draggingEl: keyof Anchor;
+    };
+
+const [anchorList, setAnchorList] = createStore<{ anchors: Anchor[] }>({
+  anchors: [
+    {
+      position: { x: 150, y: 200 },
+      leftControl: null,
+      rightControl: { x: 250, y: 150 },
+    },
+    {
+      position: { x: 350, y: 350 },
+      leftControl: { x: 250, y: 400 },
+      rightControl: null,
+    },
+  ],
+});
+
+const [draggingState, setDraggingState] = createSignal<DraggingState>({
   isDragging: false,
-  draggingEl: null,
 });
 
 const App: Component = () => {
-  const dots = createMemo<Position[]>(() => {
-    return getCurvePoints(anchor1(), control1(), control2(), anchor2(), 100);
-  });
+  const path = () => {
+    let str = "";
 
-  const lines = createMemo(() => {
-    const lines: { x1: number; y1: number; x2: number; y2: number }[] = [];
-    for (let i = 0; i < dots().length - 1; i++) {
-      const current = dots()[i];
-      const next = dots()[i + 1];
-      lines.push({ x1: current.x, y1: current.y, x2: next.x, y2: next.y });
+    for (let i = 0; i < anchorList.anchors.length - 1; i++) {
+      const current = anchorList.anchors[i];
+      const next = anchorList.anchors[i + 1];
+      const dots = getCurvePoints(
+        current.position!,
+        current.rightControl!,
+        next.leftControl!,
+        next.position,
+        50
+      );
+      for (let j = 0; j < dots.length; j++) {
+        str += i === 0 && j === 0 ? "M " : i === 0 && j === 1 ? "L " : "";
+        const current = dots[j];
+        str += `${current.x.toFixed(3)} ${current.y.toFixed(3)} `;
+      }
     }
-    return lines;
-  });
+
+    return str;
+  };
 
   let container: SVGSVGElement;
   return (
@@ -82,119 +111,138 @@ const App: Component = () => {
         width={500}
         height={500}
         ref={(el) => (container = el)}
+        onClick={(e) => {
+          if (e.currentTarget === e.target) {
+            setAnchorList(
+              produce((state) => {
+                const lastAnchor = state.anchors[state.anchors.length - 1];
+                const { x, y } = container.getBoundingClientRect();
+                const newPos = { x: e.clientX - x + 1, y: e.clientY - y + 1 };
+                lastAnchor.rightControl = {
+                  x:
+                    2 * lastAnchor.position.x -
+                    (lastAnchor?.leftControl?.x ?? 10),
+                  y:
+                    2 * lastAnchor.position.y -
+                    (lastAnchor?.leftControl?.y ?? 10),
+                };
+                state.anchors.push({
+                  position: newPos,
+                  leftControl: { x: newPos.x + 10, y: newPos.y - 20 },
+                  rightControl: null,
+                });
+              })
+            );
+          }
+        }}
         onMouseMove={(e) => {
-          const { x, y } = container.getBoundingClientRect();
-          const newPos = { x: e.clientX - x + 1, y: e.clientY - y + 1 };
-          setMousePos(newPos);
-          if (draggingState().isDragging) {
-            switch (draggingState().draggingEl) {
-              case "anchor1":
-                setAnchor1(newPos);
-                return;
-              case "control1":
-                setControl1(newPos);
-                return;
-              case "control2":
-                setControl2(newPos);
-                return;
-              case "anchor2":
-                setAnchor2(newPos);
-                return;
-            }
+          const dragState = draggingState();
+          if (dragState.isDragging) {
+            const { x, y } = container.getBoundingClientRect();
+            const newPos = { x: e.clientX - x + 1, y: e.clientY - y + 1 };
+            setAnchorList(
+              "anchors",
+              dragState.draggingIndex,
+              dragState.draggingEl,
+              newPos
+            );
           }
         }}
       >
         <rect stroke="white" fill="none" width={500} height={500} />
 
-        <Show when={showDots()}>
-          <For each={dots()}>
-            {(dot) => (
-              <circle
-                class="curve-dot"
-                cx={dot.x}
-                cy={dot.y}
-                r={0.5}
-                stroke="#ffffff"
-                // stroke-width="1"
-                fill="#dddddd"
-              />
-            )}
-          </For>
-        </Show>
-        <For each={lines()}>
-          {(line) => <line {...line} class="curve-line" />}
-        </For>
-        <line
-          class="handle-line"
-          x1={anchor1().x}
-          x2={control1().x}
-          y1={anchor1().y}
-          y2={control1().y}
-        />
-        <line
-          class="handle-line"
-          x1={anchor2().x}
-          x2={control2().x}
-          y1={anchor2().y}
-          y2={control2().y}
-        />
-        <circle
-          classList={{
-            anchor: true,
-            dragging: draggingState().draggingEl === "anchor1",
-          }}
-          cx={anchor1().x}
-          cy={anchor1().y}
-          onMouseDown={() => {
-            setDraggingState({ isDragging: true, draggingEl: "anchor1" });
-          }}
-          onMouseUp={() => {
-            setDraggingState({ isDragging: false, draggingEl: null });
-          }}
-        />
-        <circle
-          classList={{
-            control: true,
-            dragging: draggingState().draggingEl === "control1",
-          }}
-          cx={control1().x}
-          cy={control1().y}
-          onMouseDown={() => {
-            setDraggingState({ isDragging: true, draggingEl: "control1" });
-          }}
-          onMouseUp={() => {
-            setDraggingState({ isDragging: false, draggingEl: null });
-          }}
-        />
+        <path d={path()} class="curve-line" />
 
-        <circle
-          classList={{
-            control: true,
-            dragging: draggingState().draggingEl === "control2",
+        <For each={anchorList.anchors}>
+          {(anchor, idx) => {
+            const dragState = draggingState();
+            return (
+              <>
+                <Show when={!!anchor.leftControl}>
+                  <line
+                    class="handle-line"
+                    x1={anchor.leftControl?.x}
+                    x2={anchor.position.x}
+                    y1={anchor.leftControl?.y}
+                    y2={anchor.position.y}
+                  />
+                  <circle
+                    classList={{
+                      control: true,
+                      dragging:
+                        dragState.isDragging &&
+                        dragState.draggingIndex === idx() &&
+                        dragState.draggingEl === "leftControl",
+                    }}
+                    cx={anchor.leftControl?.x}
+                    cy={anchor.leftControl?.y}
+                    onMouseDown={() => {
+                      setDraggingState({
+                        isDragging: true,
+                        draggingIndex: idx(),
+                        draggingEl: "leftControl",
+                      });
+                    }}
+                    onMouseUp={() => {
+                      setDraggingState({ isDragging: false });
+                    }}
+                  />
+                </Show>
+                <Show when={!!anchor.rightControl}>
+                  <line
+                    class="handle-line"
+                    x1={anchor.rightControl?.x}
+                    x2={anchor.position.x}
+                    y1={anchor.rightControl?.y}
+                    y2={anchor.position.y}
+                  />
+                  <circle
+                    classList={{
+                      control: true,
+                      dragging:
+                        dragState.isDragging &&
+                        dragState.draggingIndex === idx() &&
+                        dragState.draggingEl === "rightControl",
+                    }}
+                    cx={anchor.rightControl?.x}
+                    cy={anchor.rightControl?.y}
+                    onMouseDown={() => {
+                      setDraggingState({
+                        isDragging: true,
+                        draggingIndex: idx(),
+                        draggingEl: "rightControl",
+                      });
+                    }}
+                    onMouseUp={() => {
+                      setDraggingState({ isDragging: false });
+                    }}
+                  />
+                </Show>
+                <circle
+                  classList={{
+                    anchor: true,
+                    dragging:
+                      dragState.isDragging &&
+                      dragState.draggingIndex === idx() &&
+                      dragState.draggingEl === "position",
+                  }}
+                  cx={anchor.position.x}
+                  cy={anchor.position.y}
+                  onMouseDown={() => {
+                    setDraggingState({
+                      isDragging: true,
+                      draggingIndex: idx(),
+                      draggingEl: "position",
+                    });
+                  }}
+                  onMouseUp={() => {
+                    setDraggingState({ isDragging: false });
+                  }}
+                />
+              </>
+            );
           }}
-          cx={control2().x}
-          cy={control2().y}
-          onMouseDown={() => {
-            setDraggingState({ isDragging: true, draggingEl: "control2" });
-          }}
-          onMouseUp={() => {
-            setDraggingState({ isDragging: false, draggingEl: null });
-          }}
-        />
-        <circle
-          classList={{
-            anchor: true,
-            dragging: draggingState().draggingEl === "anchor2",
-          }}
-          cx={anchor2().x}
-          cy={anchor2().y}
-          onMouseDown={() => {
-            setDraggingState({ isDragging: true, draggingEl: "anchor2" });
-          }}
-          onMouseUp={() => {
-            setDraggingState({ isDragging: false, draggingEl: null });
-          }}
-        />
+        </For>
       </svg>
     </div>
   );
