@@ -2,24 +2,27 @@ import { createMutable, createStore } from "solid-js/store";
 import { getDraftablePos } from "../helpers/getDraftablePos";
 import { getCurvePoints } from "../helpers/getCurvePoints";
 import { Anchor } from "../types";
+export const TEMP_ANCHORS_KEY = "temp-anchors";
 
 export const [anchorStore, setAnchorStore] = createStore<{
   anchors: Anchor[];
   paths: string[];
   draftPaths: string[];
 }>({
-  anchors: [
-    {
-      position: { x: 150, y: 200 },
-      leftControl: null,
-      rightControl: { x: 250, y: 150 },
-    },
-    {
-      position: { x: 350, y: 350 },
-      leftControl: { x: 250, y: 400 },
-      rightControl: null,
-    },
-  ],
+  anchors: localStorage.getItem(TEMP_ANCHORS_KEY)
+    ? JSON.parse(localStorage.getItem(TEMP_ANCHORS_KEY)!)
+    : [
+        {
+          position: { x: 150, y: 200 },
+          leftControl: null,
+          rightControl: { x: 250, y: 150 },
+        },
+        {
+          position: { x: 350, y: 350 },
+          leftControl: { x: 250, y: 400 },
+          rightControl: null,
+        },
+      ],
   get paths() {
     const paths: string[] = [];
 

@@ -15,7 +15,11 @@ import { LockOpenedIcon } from "./components/LockOpenedIcon";
 import { commitAnchor } from "./helpers/commitAnchor";
 import { getDraftablePos } from "./helpers/getDraftablePos";
 import { getOpposite } from "./helpers/getOpposite";
-import { anchorStore, setAnchorStore } from "./store/anchorStore";
+import {
+  anchorStore,
+  setAnchorStore,
+  TEMP_ANCHORS_KEY,
+} from "./store/anchorStore";
 import { DraggableData, Position } from "./types";
 
 const applyTransform = (position: Position, delta: Position) => {
@@ -30,11 +34,8 @@ const applyTransform = (position: Position, delta: Position) => {
 const App: Component = () => {
   const [, { onDragMove, onDragEnd }] = useDragDropContext()!;
 
-  if (localStorage.getItem("anchors")) {
-    setAnchorStore("anchors", JSON.parse(localStorage.getItem("anchors")!));
-  }
   createEffect(() => {
-    localStorage.setItem("anchors", JSON.stringify(anchorStore.anchors));
+    localStorage.setItem(TEMP_ANCHORS_KEY, JSON.stringify(anchorStore.anchors));
   });
 
   const [lockControl, setLockControl] = createSignal(true);
@@ -161,23 +162,31 @@ const App: Component = () => {
         </Index>
       </svg>
 
-      <button
-        class={`lock-button ${lockControl() ? "locked" : "open"}`}
-        onClick={() => setLockControl((locked) => !locked)}
-      >
-        <Show
-          when={lockControl()}
-          fallback={
-            <>
-              <LockOpenedIcon />
-              <span class="text-base">Lock Opened</span>
-            </>
-          }
+      <div class="button-row">
+        <button
+          class={`lock-button ${lockControl() ? "locked" : "open"}`}
+          onClick={() => setLockControl((locked) => !locked)}
         >
-          <LockClosedIcon />
-          <span class="text-base">Locked</span>
-        </Show>
-      </button>
+          <Show
+            when={lockControl()}
+            fallback={
+              <>
+                <LockOpenedIcon />
+                <span class="text-sm">Lock Opened</span>
+              </>
+            }
+          >
+            <LockClosedIcon />
+            <span class="text-sm">Locked</span>
+          </Show>
+        </button>
+
+        <select id="location" name="location" class="dropdown">
+          <option>United States</option>
+          <option selected>Canada</option>
+          <option>Mexico</option>
+        </select>
+      </div>
     </div>
   );
 };
